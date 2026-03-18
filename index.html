@@ -468,6 +468,11 @@
     }
   });
 
+  // Avisa o Chatwoot que o iFrame está pronto para receber contexto
+  window.addEventListener('load', () => {
+    window.parent.postMessage('chatwoot-dashboard-app:ready', '*');
+  });
+
   // ─── Demo mode (sem Chatwoot) ─────────────────────────────
   // Remove este bloco em produção ou mantenha para testar
   const isInsideIframe = window !== window.parent;
