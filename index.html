@@ -458,19 +458,24 @@
   }
 
   // ─── postMessage listener (Chatwoot) ──────────────────────
-  window.addEventListener('message', (event) => {
-    const d = event.data;
-    if (!d) return;
+  // O Chatwoot envia event.data como STRING JSON, nao objeto direto
+  function isJSONValid(data) {
+    try { JSON.parse(data); return true; } catch(e) { return false; }
+  }
 
-    // Chatwoot envia este tipo quando o agente muda de conversa
-    if (d.type === 'chatwoot:set-context') {
-      render(d.contact || {}, d.conversation || {});
+  window.addEventListener('message', (event) => {
+    if (!event.data || !isJSONValid(event.data)) return;
+    const d = JSON.parse(event.data);
+
+    // Chatwoot envia { event: "appContext", data: { contact, conversation, currentAgent } }
+    if (d.event === 'appContext') {
+      render(d.data.contact || {}, d.data.conversation || {});
     }
   });
 
-  // Avisa o Chatwoot que o iFrame está pronto para receber contexto
+  // Solicita o contexto ao Chatwoot assim que o iFrame carrega
   window.addEventListener('load', () => {
-    window.parent.postMessage('chatwoot-dashboard-app:ready', '*');
+    window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
   });
 
   // ─── Demo mode (sem Chatwoot) ─────────────────────────────
