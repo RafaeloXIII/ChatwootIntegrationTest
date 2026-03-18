@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Cliente</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --teal: #1D9E75;
+    --teal-light: #5DCAA5;
+    --teal-dim: rgba(29,158,117,0.12);
+    --teal-dim2: rgba(29,158,117,0.06);
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #484f58;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  /* Loading state */
+  #loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    gap: 16px;
+    color: var(--text-muted);
+  }
+  .pulse-ring {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    animation: pulse-ring 1.4s ease-out infinite;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
+  #loading p { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; }
+
+  /* Main panel */
+  #painel { display: none; animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header — contact identity */
+  .contact-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .contact-header::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--teal);
+    border-radius: 3px 0 0 3px;
+  }
+
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--teal-dim);
+    border: 1px solid var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--teal-light);
+    flex-shrink: 0;
+  }
+
+  .contact-info { flex: 1; min-width: 0; }
+  .contact-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .contact-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .status-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--teal-dim);
+    color: var(--teal-light);
+    border: 1px solid rgba(29,158,117,0.3);
+    white-space: nowrap;
+  }
+
+  /* Section */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .section-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  /* Field rows */
+  .fields { padding: 4px 0; }
+  .field-row {
+    display: flex;
+    align-items: baseline;
+    padding: 7px 14px;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .field-row:hover { background: var(--teal-dim2); }
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .field-value {
+    font-size: 12px;
+    color: var(--text);
+    flex: 1;
+    word-break: break-all;
+  }
+  .field-value.mono { font-family: var(--mono); font-size: 11px; }
+  .field-value.empty { color: var(--text-dim); font-style: italic; }
+
+  /* Copy button */
+  .copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { color: var(--teal-light); background: var(--teal-dim); }
+  .copy-btn.copied { color: var(--teal-light); }
+
+  /* Conversa info */
+  .conv-meta {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+  }
+  .meta-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: var(--surface2);
+  }
+  .meta-chip.open   { border-color: rgba(29,158,117,0.4); color: var(--teal-light); background: var(--teal-dim); }
+  .meta-chip.pending { border-color: rgba(186,117,23,0.4); color: #EF9F27; background: rgba(186,117,23,0.08); }
+  .meta-chip.resolved { border-color: rgba(99,153,34,0.4); color: #97C459; background: rgba(99,153,34,0.08); }
+
+  /* Custom attributes */
+  .attr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .attr-cell {
+    background: var(--surface);
+    padding: 10px 14px;
+  }
+  .attr-cell:hover { background: var(--teal-dim2); }
+  .attr-key {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .attr-val {
+    font-size: 12px;
+    color: var(--text);
+  }
+  .attr-val.empty { color: var(--text-dim); font-style: italic; font-size: 11px; }
+
+  /* Footer timestamp */
+  .footer {
+    text-align: center;
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+
+  /* Demo banner */
+  .demo-bar {
+    display: none;
+    background: var(--teal-dim);
+    border: 1px solid rgba(29,158,117,0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--teal-light);
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="pulse-ring"></div>
+  <p>aguardando contexto...</p>
+</div>
+
+<!-- Demo mode banner -->
+<div class="demo-bar" id="demo-bar">modo demonstração — dados simulados</div>
+
+<!-- Painel principal -->
+<div id="painel">
+
+  <!-- Header do contato -->
+  <div class="contact-header">
+    <div class="avatar" id="avatar">??</div>
+    <div class="contact-info">
+      <div class="contact-name" id="contact-name">—</div>
+      <div class="contact-id" id="contact-id">#—</div>
+    </div>
+    <div class="status-badge" id="conv-status">—</div>
+  </div>
+
+  <!-- Informações de contato -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot"></div>
+      <span class="section-title">contato</span>
+    </div>
+    <div class="fields">
+      <div class="field-row">
+        <span class="field-label">email</span>
+        <span class="field-value mono" id="contact-email">—</span>
+        <button class="copy-btn" onclick="copyField('contact-email')" title="Copiar">⎘</button>
+      </div>
+      <div class="field-row">
+        <span class="field-label">telefone</span>
+        <span class="field-value mono" id="contact-phone">—</span>
+        <button class="copy-btn" onclick="copyField('contact-phone')" title="Copiar">⎘</button>
+      </div>
+      <div class="field-row">
+        <span class="field-label">empresa</span>
+        <span class="field-value" id="contact-company">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">localização</span>
+        <span class="field-value" id="contact-location">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversa -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot"></div>
+      <span class="section-title">conversa</span>
+    </div>
+    <div class="conv-meta">
+      <span class="meta-chip" id="conv-id">#—</span>
+      <span class="meta-chip" id="conv-status-chip">—</span>
+      <span class="meta-chip" id="conv-channel">—</span>
+      <span class="meta-chip" id="conv-inbox">—</span>
+    </div>
+  </div>
+
+  <!-- Atributos customizados -->
+  <div class="section" id="section-attrs" style="display:none">
+    <div class="section-header">
+      <div class="section-dot"></div>
+      <span class="section-title">atributos</span>
+    </div>
+    <div class="attr-grid" id="attr-grid"></div>
+  </div>
+
+  <div class="footer" id="footer-time"></div>
+</div>
+
+<script>
+  // ─── Helpers ───────────────────────────────────────────────
+  function initials(name) {
+    if (!name) return '??';
+    return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('');
+  }
+
+  function val(v, fallback = '—') {
+    if (v === null || v === undefined || v === '') return fallback;
+    return v;
+  }
+
+  function copyField(id) {
+    const el = document.getElementById(id);
+    if (!el || el.textContent === '—') return;
+    navigator.clipboard.writeText(el.textContent).then(() => {
+      const btn = el.nextElementSibling;
+      if (btn) { btn.classList.add('copied'); btn.textContent = '✓'; }
+      setTimeout(() => {
+        if (btn) { btn.classList.remove('copied'); btn.textContent = '⎘'; }
+      }, 1500);
+    });
+  }
+
+  function statusClass(status) {
+    if (!status) return '';
+    const s = status.toLowerCase();
+    if (s === 'open') return 'open';
+    if (s === 'pending') return 'pending';
+    if (s === 'resolved') return 'resolved';
+    return '';
+  }
+
+  function statusLabel(status) {
+    const map = { open: 'aberta', pending: 'pendente', resolved: 'resolvida', assigned: 'atribuída' };
+    return map[(status||'').toLowerCase()] || status || '—';
+  }
+
+  // ─── Render ────────────────────────────────────────────────
+  function render(contact, conversation) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('painel').style.display = 'block';
+
+    // Avatar + nome
+    document.getElementById('avatar').textContent = initials(contact.name);
+    document.getElementById('contact-name').textContent = val(contact.name);
+    document.getElementById('contact-id').textContent = contact.id ? `#${contact.id}` : '—';
+
+    // Status badge no header
+    const statusEl = document.getElementById('conv-status');
+    statusEl.textContent = statusLabel(conversation?.status);
+    statusEl.className = 'status-badge ' + statusClass(conversation?.status);
+
+    // Campos de contato
+    const emailEl = document.getElementById('contact-email');
+    emailEl.textContent = val(contact.email);
+    emailEl.className = 'field-value mono' + (!contact.email ? ' empty' : '');
+
+    const phoneEl = document.getElementById('contact-phone');
+    phoneEl.textContent = val(contact.phone_number);
+    phoneEl.className = 'field-value mono' + (!contact.phone_number ? ' empty' : '');
+
+    document.getElementById('contact-company').textContent = val(
+      contact.additional_attributes?.company_name || contact.company?.name
+    );
+    document.getElementById('contact-location').textContent = val(
+      [contact.location, contact.additional_attributes?.city].filter(Boolean).join(', ')
+    );
+
+    // Conversa
+    document.getElementById('conv-id').textContent =
+      conversation?.id ? `#${conversation.id}` : '#—';
+
+    const chip = document.getElementById('conv-status-chip');
+    chip.textContent = statusLabel(conversation?.status);
+    chip.className = 'meta-chip ' + statusClass(conversation?.status);
+
+    document.getElementById('conv-channel').textContent =
+      val(conversation?.channel || conversation?.meta?.channel, 'canal desconhecido');
+    document.getElementById('conv-inbox').textContent =
+      val(conversation?.inbox_id ? `inbox ${conversation.inbox_id}` : null, '—');
+
+    // Atributos customizados
+    const attrs = {
+      ...contact.additional_attributes,
+      ...conversation?.additional_attributes
+    };
+    const attrEntries = Object.entries(attrs).filter(([k,v]) =>
+      v !== null && v !== undefined && v !== '' && k !== 'company_name' && k !== 'city'
+    );
+
+    if (attrEntries.length > 0) {
+      document.getElementById('section-attrs').style.display = 'block';
+      const grid = document.getElementById('attr-grid');
+      grid.innerHTML = attrEntries.map(([k, v]) => `
+        <div class="attr-cell">
+          <div class="attr-key">${k.replace(/_/g,' ')}</div>
+          <div class="attr-val">${v}</div>
+        </div>
+      `).join('');
+    }
+
+    // Timestamp
+    document.getElementById('footer-time').textContent =
+      'atualizado ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  // ─── postMessage listener (Chatwoot) ──────────────────────
+  window.addEventListener('message', (event) => {
+    const d = event.data;
+    if (!d) return;
+
+    // Chatwoot envia este tipo quando o agente muda de conversa
+    if (d.type === 'chatwoot:set-context') {
+      render(d.contact || {}, d.conversation || {});
+    }
+  });
+
+  // ─── Demo mode (sem Chatwoot) ─────────────────────────────
+  // Remove este bloco em produção ou mantenha para testar
+  const isInsideIframe = window !== window.parent;
+  if (!isInsideIframe) {
+    document.getElementById('demo-bar').style.display = 'block';
+    setTimeout(() => {
+      render(
+        {
+          id: 4821,
+          name: 'Ana Carolina Souza',
+          email: 'ana.souza@empresa.com.br',
+          phone_number: '+55 41 99876-5432',
+          location: 'Curitiba, PR',
+          additional_attributes: {
+            company_name: 'Empresa Ltda',
+            city: 'Curitiba',
+            plano: 'Pro',
+            cliente_desde: '2023-03-15',
+            segmento: 'e-commerce'
+          }
+        },
+        {
+          id: 1047,
+          status: 'open',
+          channel: 'whatsapp',
+          inbox_id: 3,
+          additional_attributes: {
+            ultimo_pedido: '#PED-8821',
+            valor_total: 'R$ 1.240,00'
+          }
+        }
+      );
+    }, 1200);
+  }
+</script>
+</body>
+</html>
